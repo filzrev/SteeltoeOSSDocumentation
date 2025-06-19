@@ -39,70 +39,8 @@ jobs:
       shell: pwsh
       run: build/build-metadata.ps1
 
-    - name: dotnet build
-      run: dotnet build src/Steeltoe.io --configuration Release
-
-    - name: dotnet publish
-      run: dotnet publish src/Steeltoe.io --configuration Release --no-build --output ${{ env.DOTNET_ROOT }}/mainsite
-
     - name: Upload artifact for deployment job
       uses: actions/upload-artifact@v4
       with:
         name: Steeltoe.io
-        path: ${{ env.DOTNET_ROOT }}/mainsite
-
-  deploy:
-    name: Deploy
-    if: ${{ github.secret_source == 'Actions' }}
-    environment:
-      name: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || vars.STAGING_SLOT_NAME }}
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    env:
-      SLOT_NAME: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.number) || vars.STAGING_SLOT_NAME }}
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-    - name: Download artifact from build job
-      uses: actions/download-artifact@v4
-      with:
-        name: Steeltoe.io
-
-    - name: Login to Azure
-      uses: azure/login@v2
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: If PR, create a new staging slot
-      if: ${{ github.event_name == 'pull_request' }}
-      shell: pwsh
-      run: |
-        if (az webapp deployment slot list --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --name ${{ vars.AZURE_WWW_NAME}} | Select-String '"name": "${{ env.SLOT_NAME }}"')
-        {
-          Write-Host "Staging slot already exists"
-        }
-        else
-        {
-          az webapp deployment slot create --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --name ${{ vars.AZURE_WWW_NAME}} --slot ${{ env.SLOT_NAME }} --configuration-source ${{ vars.STAGING_SLOT_NAME }}
-        }
-
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v3
-      with:
-        app-name: ${{ vars.AZURE_WWW_NAME }}
-        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
-        slot-name: ${{ env.SLOT_NAME }}
-        clean: true
-
-    - name: If PR, comment with the preview link
-      if: ${{ github.event_name == 'pull_request' }}
-      uses: mshick/add-pr-comment@v2
-      with:
-        message: |
-          ## Preview link: https://${{ vars.AZURE_WWW_NAME }}-${{ env.SLOT_NAME }}.azurewebsites.net
-
-          - Your changes have been deployed to the preview site. The preview site will update as you add more commits to this branch.
-          - The preview link is shareable, but will be deleted when the pull request is merged or closed.
-
-          > *This is an automated message.*
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        path: docs/api
