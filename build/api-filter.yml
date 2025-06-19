@@ -13,9 +13,6 @@ apiRules:
 - exclude:
     uidRegex: ^Microsoft\.Diagnostics\.Runtime\.Interop$
     type: Namespace
-- exclude:
-    uidRegex: ^Microsoft\.Extensions\.DependencyInjection$
-    type: Namespace
 # Excluding Steeltoe.Messaging.RabbitMQ.Support.RabbitMessageBuilder class clears issue #147
 - exclude:
     uidRegex: ^Steeltoe\.Messaging\.RabbitMQ\.Support\.RabbitMessageBuilder
